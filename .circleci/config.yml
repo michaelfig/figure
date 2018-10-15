@@ -2,12 +2,9 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: circleci/buildpack-deps:stretch
     steps:
       - checkout
-      - run:
-          name: Install build tools
-          command: apt-get install make
       - run:
           name: Run the test suite
           command: make check
