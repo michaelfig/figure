@@ -1,7 +1,7 @@
-:; OUTIN=${1-. figure.glt}; shift; echo "FIGBoot $OUTIN $@"
-:; echo "Trying Perl..."; perl -ne '/^\$exe\/perl(:|$)/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0" | perl - $OUTIN "$@" && exit
-:; echo "Trying Python..."; python -c 'print "FIXME: Python not implemented"; import sys; sys.exit(1)' $OUTIN "$@" && exit
-:; echo "Failed!"; exit 1
+:; OUTIN=${1-. figure.glt};shift;echo 1>&2 "FIGBoot $OUTIN $@"
+:; echo 1>&2 "Trying Perl...";perl -ne '/^\$exe\/perl(:|$)/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0"|perl - $OUTIN "$@"&&exit
+:; echo 1>&2 "Trying Python...";python -c 'import sys;print>>sys.stderr,"FIXME: Python not implemented";sys.exit(1)' $OUTIN "$@"&&exit
+:; echo 1>&2 "Failed!";exit 1
 @echo off
 echo Trying %COMSPEC%...
 echo FIXME: %COMSPEC% not implemented
@@ -21,32 +21,32 @@ cmd> figboot
 
 Have fun!
 
-Michael FIG <michael+figure@fig.org>, 2018-10-14
+Michael FIG <michael+figure@fig.org>, 2018-10-15
 
 [guilt
 This identifies the rest of this file as Guilt source code.
 ]
 
-[define $bin/FIGBoot
+[define $/figure/FIGBoot Figure bootstrap
   Figure's bootstrap Guilt macro processor, in different languages.
   
   This is only part of the bootstrap process.
   To install Figure completely, you'll still need to run:
   
-  $ $bin/FIGBoot FIGURE.glt
+  gush> $/figure/FIGBoot figure.glt
 
   This version understands:
-  * [guilt] tag syntax.
-  * [define CELLREF ...] for creating cells.
-  * [copy SRC-CELLREF DEST-CELLREF] for copying cells.
-  * [insert DEST-CELLREF SRC-CELLREF] for putting a cell
-  * [replace CELLREF] for expansion of cells.
-  * [comment ...] expansions
-  * [inline SUBST VALUE] expansions
-VERSION 0.0.1
+  * [guilt] tag defining comment syntax and activating Guilt
+  * [define DEST ...] for creating cells
+  * [insert DEST SRC] for putting a cell before others in the DEST
+  * [guilty DEST [LIB...]] for recursive expansion of DEST using LIBS
+  * [comment SRC] expansions
+  * [inline SUBST=EXPR [SUBST2=EXPR2...]] expansions
+  * [+ EXPR...] addition
+VERSION 0.0.2
   FIGBoot semantic version.
   
-  This is not Figure's version as a whole.  That is located in $FIGURE/VERSION.
+  This is not Figure's version as a whole.  That is found in $app/FIGURE/VERSION.
 LICENSE ISC
   Copyright © 2018, Michael FIG <michael+figure@fig.org>
 
@@ -63,93 +63,55 @@ LICENSE ISC
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 $exe/gush
   # The Guilt macro processor, recursively in Figure's Gush.
-  $bin/FIGBoot $ARGS
+  $/figure/FIGBoot $ARGS
 $exe/perl
   #! /usr/bin/env perl
   # [guilt
   # ]
   #
-  # [comment $bin/FIGBoot/LICENSE
+  # [comment $/figure/FIGBoot/LICENSE
+  # Copyright © 2018, Michael FIG <michael+figure@fig.org>
+  #
+  # Permission to use, copy, modify, and/or distribute this software for any
+  # purpose with or without fee is hereby granted, provided that the above
+  # copyright notice and this permission notice appear in all copies.
+  #
+  # THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+  # WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+  # MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+  # ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+  # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+  # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+  # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   # ]
   #
   # Michael FIG <michael+figure@fig.org>, 2018-10-14
   
-  # [inline @@ $IN/$lineno
-  #   #line @@
-  #line 80
+  # [inline @line@=[+ $GUILT/IN/line-number 3] @src@=$GUILT/IN/$src
+  # #line @line@ @src@
+  #line 92
   # ]
 
+  # Comments are for the weak.  I'll add them once Guilt actually processes
+  # FIGBoot.bat.
   use strict;
   use warnings;
 
   package Figure::Boot;
-  # [inline @@ $bin/FIGBoot/VERSION
-  #   my $VERSION = "@@";
-  my $VERSION = "NOTSET";
+  # [inline @VERSION@=$/figure/FIGBoot/VERSION
+  # my $VERSION = "@VERSION@";
+  my $VERSION = "0.0.2";
   # ]
 
   sub main {
     my ($pkg, @args) = @_;
 
     my $KS = Figure::KS->new;
-  
-    print STDERR "Greetings from Perl FIGBoot $VERSION (one part of Figure)!\n";
+    $KS->slog(1, "Greetings from Perl FIGBoot $VERSION (one part of Figure)!");
+    $KS->write('$/figure/guilt/$exe/perl-primitive', 'Figure::Guilt');
 
-    my $OUT = shift @args;
-    my @IN = (@args);
-    if (!@IN) {
-      @IN = ($OUT);
-    }
-
-    if (!$OUT) {
-      print STDERR "You must specify an OUT cell\n";
-      exit 1;
-    }
-
-    # Input phase.
-    for my $in (@IN) {
-      print STDERR "Processing \`$in'...\n";
-      open(IN, '<', $in) ||
-        die "Cannot read \`$in': $!\n";
-      my $buf = '';
-      while ($_ = <IN>) {
-        $buf .= $_;
-      }
-      close(IN);
-
-      # Save the contents to $OUT.
-      my $cell = $KS->cell($in);
-      $KS->write($cell, $buf);
-
-      # We reverse the order, so that the last output is the default one
-      # to write below.
-      $KS->insert('OUT', $cell);
-    }
-
-    # Output phase.
-    if ($OUT eq '$STDOUT') {
-      my $name = $KS->read('OUT/$name');
-      print STDERR "Writing $name to \$STDOUT...\n";
-      print $KS->read('OUT');
-    }
-    elsif (-d $OUT) {
-      # Find each main output.
-      my $cell = $KS->find('OUT');
-      while ($cell) {
-        print "FIXME: Would replace ", $KS->read($cell, '$name'), "\n";
-        $cell = $KS->find($cell, 'OUT');
-      }
-    }
-    else {
-      print STDERR "Generating \`$OUT'...\n";
-      open(OUT, '>', $OUT) ||
-        die "Cannot write \`$OUT': $!\n";
-      print OUT $KS->read('OUT');
-      close(OUT) ||
-        die "Cannot commit \`$OUT': $!\n";
-    }
-    print STDERR "Success!\n";
-    exit 0;
+    # Input phase.  Run as a subroutine, using the same kernel.
+    $KS->apply($KS, '$/figure/guilt', @args);
   }
 
   package Figure::O;
@@ -177,6 +139,11 @@ $exe/perl
     my $exists = $self->[$next]{$dim};
     if (defined $exists || !$create) {
       return $exists;
+    }
+
+    if (!$create) {
+      my $fw = $dir ? '' : '-';
+      die "Cannot lookup `$fw$dim'";
     }
     my $prev = $dir ? BACKWARD : FORWARD;
     my $cell = $self->new();
@@ -272,7 +239,13 @@ $exe/perl
       return $cell->get();
     }
 
-    return $self->[GUSH]->resolve($cell, $path)->get();
+    my $res = eval {
+      return $self->[GUSH]->resolve($cell, $path)->get();
+    };
+    if ($@) {
+      $self->slog(0, $@);
+    }
+    return $res;
   }
 
   sub write {
@@ -316,6 +289,38 @@ $exe/perl
     my ($parent, @link) = $self->[GUSH]->resolve($cell, $path, -1);
     $parent->insert($target, @link);
     return;
+  }
+
+  sub apply {
+    my ($self, $ks, $path, @args) = @_;
+    my $env = {PROGNAME => $path};
+    if (ref $args[0]){
+      my $toadd = shift @args;
+      $env = {%$env, %$toadd};
+    }
+    my $prim = $self->read($self->[CONTEXT], $path . '/$exe/perl-primitive');
+    {
+      no strict 'refs';
+      my $sym = "$prim\::apply";
+      return &$sym($ks, $env, @args);
+    }
+  }
+
+  sub slog {
+    my ($self, $level, @args) = @_;
+    my $context = {};
+    if (ref $args[0]) {
+      # Context hash.
+      $context = shift @args;
+    }
+
+    if (!$level) {
+      require Carp;
+      Carp::confess("Fatal error: ", @args);
+    }
+
+    local $, = '';
+    print STDERR @args, "\n";
   }
 
   package Figure::Gush;
@@ -363,7 +368,9 @@ $exe/perl
       if ($create && $create < 0) {
         return ($target, @link);
       }
-      $target = $target->lookup($create, @link);
+      if ($target) {
+        $target = $target->lookup($create, @link);
+      }
     }
 
     if (!$create && !$target) {
@@ -372,15 +379,78 @@ $exe/perl
     return $target;
   }
 
+  package Figure::Guilt;
+
+  # If present, a PKG::op($KS, $text) sub will be called with the macro body
+  # text.  It does parsing by itself, and can choose to apply() later.
+
+  sub apply {
+    my ($KS, $KW, @ARGS) = @_;
+
+    my $OUT = shift @ARGS;
+    my @IN = @ARGS;
+    if (!@IN) {
+      @IN = ($OUT);
+    }
+
+    if (!$OUT) {
+      $KS->slog(0, "You must specify an OUT cell");
+    }
+
+    for my $in (@IN) {
+      $KS->slog(1, "Processing \`$in'...");
+      open(IN, '<', $in) ||
+        $KS->slog(0, "Cannot read \`$in': $!");
+      my $buf = '';
+      while ($_ = <IN>) {
+        $buf .= $_;
+      }
+      close(IN);
+
+      # Save the contents to $OUT.
+      my $cell = $KS->cell($in);
+      $KS->write($cell, $buf);
+
+      # We reverse the order, so that the last output is the default one
+      # to write below.
+      $KS->insert('$OUT', $cell);
+    }
+
+    # Output phase.
+    if ($OUT eq '$STDOUT') {
+      my $name = $KS->read('$OUT/$name');
+      $KS->slog(1, "Writing $name to \$STDOUT...");
+      print $KS->read('$OUT');
+    }
+    elsif (-d $OUT) {
+      # Find each main output.
+      my $cell = $KS->find('$OUT');
+      while ($cell) {
+        $KS->slog(1, "FIXME: Would replace ", $KS->read($cell, '$name'));
+        $cell = $KS->find($cell, '$OUT');
+      }
+    }
+    else {
+      $KS->slog(1, "Generating \`$OUT'...");
+      open(OUT, '>', $OUT) ||
+        $KS->slog(0, "Cannot write \`$OUT': $!");
+      print OUT $KS->read('$OUT');
+      close(OUT) ||
+        $KS->slog(0, "Cannot commit \`$OUT': $!");
+    }
+    $KS->slog(1, "Success!");
+    return 0;
+  }
+
   # Run the bootstrap package, unless we're a module.
   Figure::Boot->main(@ARGV) unless caller;
   1;
 ]
 
-Expand the cell references within $bin/FIGBoot.
+Expand the cell references within $/figure/FIGBoot.
 
-[replace $bin/FIGBoot/$exe/perl]
+[guilty $/figure/FIGBoot/$exe/perl]
 
-Mark $bin/FIGBoot as our main output in case they use Guilt on us.
+Mark $/figure/FIGBoot as our main output in case they use Guilt on us.
 
-[insert $OUT $bin/FIGBoot]
+[insert $OUT $/figure/FIGBoot]
