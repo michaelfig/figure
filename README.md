@@ -1,8 +1,10 @@
 # FIGURE Is Generalizing Universal Runtime Environments
 
+[![CircleCI](https://circleci.com/gh/michaelfig/figure.svg?style=svg)](https://circleci.com/gh/michaelfig/figure)
+
 This is Figure.  Welcome!
 
-Nothing much exists right now.  But I have to start somewhere.
+Nothing much exists right now, but I have to start somewhere.
 
 Try 'make check' to run the test suite.  As is expected with test-driven development, I frequently commit code that just barely passes the tests.  More tests will be added to break the suite, and then code to fix it again.
 
