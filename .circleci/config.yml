@@ -6,6 +6,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install build tools
+          command: apt-get install make
+      - run:
           name: Run the test suite
           command: make check
 
