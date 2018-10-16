@@ -1,5 +1,5 @@
-:; OUTIN=${1-. figure.glt};shift;echo 1>&2 "FIGBoot $OUTIN $@"
-:; echo 1>&2 "Trying Perl...";perl -ne '/^\$exe\/perl(:|$)/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0"|perl - $OUTIN "$@"&&exit
+:; OUTIN=${1-. $0};shift;echo 1>&2 "Configure $OUTIN $@"
+:; echo 1>&2 "Trying Perl...";perl -ne '/^\$exe\/perl( |$)/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0"|perl - $OUTIN "$@"&&exit
 :; echo 1>&2 "Trying Python...";python -c 'import sys;print>>sys.stderr,"FIXME: Python not implemented";sys.exit(1)' $OUTIN "$@"&&exit
 :; echo 1>&2 "Failed!";exit 1
 @echo off
@@ -7,46 +7,37 @@ echo Trying %COMSPEC%...
 echo FIXME: %COMSPEC% not implemented
 exit 1
 
-Run this file to build figure.glt from sources.  This uses a bootstrap
-version of the Guilt macro processor, which supports a subset of Figure's
-fully-featured Guilt.
+Launch this file to install Figure from sources.
 
-On Unix-like:
+C:\User\Figure> configure
 
-$ sh FIGBoot.bat
+It works on Unix-like platforms, too (the '.bat' extension is irrelevant):
 
-On Windows:
+$ ./Configure.bat
 
-cmd> figboot
+On success, a friendly welcome will be displayed, as well as instructions
+for where to go next.
 
 Have fun!
 
-Michael FIG <michael+figure@fig.org>, 2018-10-15
+Michael FIG <michael+figure@fig.org>, 2018-10-16
 
 [guilt
 This identifies the rest of this file as Guilt source code.
 ]
 
-[define $/figure/FIGBoot Figure bootstrap
-  Figure's bootstrap Guilt macro processor, in different languages.
+[define figure/configure Figure bootstrap
+  Figure's bootstrap, in different languages.
   
-  This is only part of the bootstrap process.
-  To install Figure completely, you'll still need to run:
-  
-  gush> $/figure/FIGBoot figure.glt
-
   This version understands:
   * [guilt] tag defining comment syntax and activating Guilt
   * [define DEST ...] for creating cells
   * [insert DEST SRC] for putting a cell before others in the DEST
-  * [guilty DEST [LIB...]] for recursive expansion of DEST using LIBS
   * [comment SRC] expansions
   * [inline SUBST=EXPR [SUBST2=EXPR2...]] expansions
   * [+ EXPR...] addition
-VERSION 0.0.2
-  FIGBoot semantic version.
-  
-  This is not Figure's version as a whole.  That is found in $app/FIGURE/VERSION.
+VERSION 0.1.0
+  Figure's Configure semantic version.
 LICENSE ISC
   Copyright © 2018, Michael FIG <michael+figure@fig.org>
 
@@ -61,15 +52,12 @@ LICENSE ISC
   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-$exe/gush
-  # The Guilt macro processor, recursively in Figure's Gush.
-  $/figure/FIGBoot $ARGS
-$exe/perl
+$exe/perl guilt
   #! /usr/bin/env perl
   # [guilt
   # ]
   #
-  # [comment $/figure/FIGBoot/LICENSE
+  # [comment $cc/LICENSE
   # Copyright © 2018, Michael FIG <michael+figure@fig.org>
   #
   # Permission to use, copy, modify, and/or distribute this software for any
@@ -93,25 +81,25 @@ $exe/perl
   # ]
 
   # Comments are for the weak.  I'll add them once Guilt actually processes
-  # FIGBoot.bat.
+  # Configure.bat.
   use strict;
   use warnings;
 
   package Figure::Boot;
-  # [inline @VERSION@=$/figure/FIGBoot/VERSION
+  # [inline @VERSION@=./VERSION
   # my $VERSION = "@VERSION@";
-  my $VERSION = "0.0.2";
+  my $VERSION = "0.1.0";
   # ]
 
   sub main {
     my ($pkg, @args) = @_;
 
     my $KS = Figure::KS->new;
-    $KS->slog(1, "Greetings from Perl FIGBoot $VERSION (one part of Figure)!");
-    $KS->write('$/figure/guilt/$exe/perl-primitive', 'Figure::Guilt');
+    $KS->slog(1, "Greetings from Figure Configure/Perl $VERSION!");
+    $KS->write('$/guilt/$exe/perl-primitive', 'Figure::Guilt');
 
     # Input phase.  Run as a subroutine, using the same kernel.
-    $KS->apply($KS, '$/figure/guilt', @args);
+    $KS->apply($KS, '$/guilt', @args);
   }
 
   package Figure::O;
@@ -447,10 +435,4 @@ $exe/perl
   1;
 ]
 
-Expand the cell references within $/figure/FIGBoot.
-
-[guilty $/figure/FIGBoot/$exe/perl]
-
-Mark $/figure/FIGBoot as our main output in case they use Guilt on us.
-
-[insert $OUT $/figure/FIGBoot]
+FIXME: The rest of Figure would go here!

@@ -1,4 +1,4 @@
-BOOT = FIGBoot.bat
+BOOT = Configure.bat
 
 check: $(BOOT)
 	rm -rf testout
