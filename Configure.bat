@@ -1,5 +1,5 @@
 :; OUTIN=${1-. $0};shift;echo 1>&2 "Configure $OUTIN $@"
-:; echo 1>&2 "Trying Perl...";perl -ne '/^\$exe\/perl( |$)/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0"|perl - $OUTIN "$@"&&exit
+:; echo 1>&2 "Trying Perl...";perl -ne '/^guilt>\$exe\/perl$/?($t=1,$_=""):$t&&/^\S/&&exit||s/^\s\s//;$t&&print' "$0"|perl - $OUTIN "$@"&&exit
 :; echo 1>&2 "Trying Python...";python -c 'import sys;print>>sys.stderr,"FIXME: Python not implemented";sys.exit(1)' $OUTIN "$@"&&exit
 :; echo 1>&2 "Failed!";exit 1
 @echo off
@@ -52,7 +52,7 @@ LICENSE ISC
   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-$exe/perl guilt
+guilt>$exe/perl
   #! /usr/bin/env perl
   # [guilt
   # ]
@@ -77,7 +77,7 @@ $exe/perl guilt
   
   # [inline @line@=[+ $GUILT/IN/line-number 3] @src@=$GUILT/IN/$src
   # #line @line@ @src@
-  #line 92
+  #line 81
   # ]
 
   # Comments are for the weak.  I'll add them once Guilt actually processes
@@ -405,9 +405,9 @@ $exe/perl guilt
     }
 
     # Output phase.
-    if ($OUT eq '$STDOUT') {
+    if ($OUT eq '$+') {
       my $name = $KS->read('$OUT/$name');
-      $KS->slog(1, "Writing $name to \$STDOUT...");
+      $KS->slog(1, "Writing $name to \$+...");
       print $KS->read('$OUT');
     }
     elsif (-d $OUT) {
